@@ -24,6 +24,7 @@ class ApnsPushConnectorOnly {
   ApnsMessageHandler? _onMessage;
   ApnsMessageHandler? _onLaunch;
   ApnsMessageHandler? _onResume;
+  ApnsMessageHandler? _onBackgroundMessage;
 
   void requestNotificationPermissions(
       [IosNotificationSettings iosSettings = const IosNotificationSettings()]) {
@@ -52,6 +53,7 @@ class ApnsPushConnectorOnly {
     _onMessage = onMessage;
     _onLaunch = onLaunch;
     _onResume = onResume;
+    _onBackgroundMessage = onBackgroundMessage;
     _channel.setMethodCallHandler(_handleMethod);
     _channel.invokeMethod('configure');
   }
@@ -72,6 +74,8 @@ class ApnsPushConnectorOnly {
         return null;
       case 'onMessage':
         return _onMessage?.call(_extractMessage(call));
+      case 'onBackgroundMessage':
+        return _onBackgroundMessage?.call(_extractMessage(call));
       case 'onLaunch':
         return _onLaunch?.call(_extractMessage(call));
       case 'onResume':
@@ -88,8 +92,8 @@ class ApnsPushConnectorOnly {
   ApnsRemoteMessage _extractMessage(MethodCall call) {
     final map = call.arguments as Map;
     // fix null safety errors
-    map.putIfAbsent('contentAvailable', () => false);
-    map.putIfAbsent('mutableContent', () => false);
+    map.putIfAbsent('contentAvailable', () => true);
+    map.putIfAbsent('mutableContent', () => true);
     return ApnsRemoteMessage.fromMap(map.cast());
   }
 
