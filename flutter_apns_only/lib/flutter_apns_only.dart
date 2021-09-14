@@ -92,8 +92,8 @@ class ApnsPushConnectorOnly {
   ApnsRemoteMessage _extractMessage(MethodCall call) {
     final map = call.arguments as Map;
     // fix null safety errors
-    map.putIfAbsent('contentAvailable', () => true);
-    map.putIfAbsent('mutableContent', () => true);
+    map['contentAvailable'] = true;
+    map['mutableContent'] = true;
     return ApnsRemoteMessage.fromMap(map.cast());
   }
 
