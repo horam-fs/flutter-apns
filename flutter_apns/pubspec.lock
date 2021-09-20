@@ -100,9 +100,11 @@ packages:
   flutter_apns_only:
     dependency: "direct main"
     description:
-      path: "../flutter_apns_only"
-      relative: true
-    source: path
+      path: flutter_apns_only
+      ref: "horam/add_on_background_message"
+      resolved-ref: "52e14f431f5b3b38851981436e9cbf4a8bc56836"
+      url: "git@github.com:horam-fs/flutter-apns.git"
+    source: git
     version: "1.5.0-dev.1"
   flutter_test:
     dependency: "direct dev"
