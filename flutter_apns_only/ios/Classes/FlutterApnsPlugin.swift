@@ -6,11 +6,12 @@ func getFlutterError(_ error: Error) -> FlutterError {
     return FlutterError(code: "Error: \(e.code)", message: e.domain, details: error.localizedDescription)
 }
 
+/// Starting point for the plugin
 @objc public class FlutterApnsPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
     internal init(channel: FlutterMethodChannel) {
         self.channel = channel
     }
-    
+    /// a method that registers the dart code to its native counterpart.
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_apns", binaryMessenger: registrar.messenger())
         let instance = FlutterApnsPlugin(channel: channel)
@@ -20,7 +21,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
     
     let channel: FlutterMethodChannel
     var launchNotification: [String: Any]?
-    var resumingFromBackground = false
+    var resumingFromBackground = false // a boolean that determines if app is resuming from Bg.
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -54,7 +55,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
             result(FlutterMethodNotImplemented)
         }
     }
-
+    /// is called inside [handle] method
     func setNotificationCategories(arguments: Any) {
         let arguments = arguments as! [[String: Any]]
         func decodeCategory(map: [String: Any]) -> UNNotificationCategory {
@@ -91,6 +92,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
         UNUserNotificationCenter.current().setNotificationCategories(Set(categories))
     }
 
+    /// called inside the handle function
     func getAuthorizationStatus()  {
         UNUserNotificationCenter.current().getNotificationSettings { (settings) in
             switch settings.authorizationStatus {
@@ -105,7 +107,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
             }
         }
     }
-    
+    /// called inside the handle function.
     func requestNotificationPermissions(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let center = UNUserNotificationCenter.current()
         let application = UIApplication.shared
@@ -186,7 +188,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
     }
     
     
-    public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) -> Bool {
+    public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> UIBackgroundFetchResult) -> Bool {
         let userInfo = FlutterApnsSerialization.remoteMessageUserInfo(toDict: userInfo)
         
         if resumingFromBackground {
