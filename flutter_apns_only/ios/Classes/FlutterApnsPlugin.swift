@@ -189,11 +189,11 @@ func getFlutterError(_ error: Error) -> FlutterError {
     public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) -> Bool {
         let userInfo = FlutterApnsSerialization.remoteMessageUserInfo(toDict: userInfo)
         
-        // if resumingFromBackground {
-        //     onResume(userInfo: userInfo)
-        // } else {
+        if resumingFromBackground {
             channel.invokeMethod("onMessage", arguments: userInfo)
-        // }
+         } else {
+            channel.invokeMethod("onMessage", arguments: userInfo)
+         }
         
         completionHandler(.noData)
         return true
