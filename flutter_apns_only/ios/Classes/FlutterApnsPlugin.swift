@@ -6,11 +6,12 @@ func getFlutterError(_ error: Error) -> FlutterError {
     return FlutterError(code: "Error: \(e.code)", message: e.domain, details: error.localizedDescription)
 }
 
+/// Starting point for the plugin
 @objc public class FlutterApnsPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
     internal init(channel: FlutterMethodChannel) {
         self.channel = channel
     }
-    
+    /// a method that registers the dart code to its native counterpart.
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_apns", binaryMessenger: registrar.messenger())
         let instance = FlutterApnsPlugin(channel: channel)
@@ -20,7 +21,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
     
     let channel: FlutterMethodChannel
     var launchNotification: [String: Any]?
-    var resumingFromBackground = false
+    var resumingFromBackground = false // a boolean that determines if app is resuming from Bg.
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -54,7 +55,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
             result(FlutterMethodNotImplemented)
         }
     }
-
+    /// is called inside [handle] method
     func setNotificationCategories(arguments: Any) {
         let arguments = arguments as! [[String: Any]]
         func decodeCategory(map: [String: Any]) -> UNNotificationCategory {
@@ -91,6 +92,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
         UNUserNotificationCenter.current().setNotificationCategories(Set(categories))
     }
 
+    /// called inside the handle function
     func getAuthorizationStatus()  {
         UNUserNotificationCenter.current().getNotificationSettings { (settings) in
             switch settings.authorizationStatus {
@@ -105,7 +107,7 @@ func getFlutterError(_ error: Error) -> FlutterError {
             }
         }
     }
-    
+    /// called inside the [handle] function.
     func requestNotificationPermissions(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let center = UNUserNotificationCenter.current()
         let application = UIApplication.shared
@@ -163,34 +165,60 @@ func getFlutterError(_ error: Error) -> FlutterError {
     }
     
     //MARK:  - AppDelegate
-    
+    /// Tells the delegate that the launch process is almost done and the app is almost ready to run.
+    /// -- application: The singleton app object.
+    /// -- launchOptions:  A dictionary indicating the reason the app was launched (if any). The contents
+    /// of this dictionary may be empty in situations where the user launched the app directly. For information 
+    /// about the possible keys in this dictionary and how to handle them, see UIApplication.LaunchOptionsKey.
+    /// -- Return Value: 
+    /// false if the app cannot handle the URL resource or continue a user activity, otherwise return true. 
+    /// The return value is ignored if the app is launched as a result of a remote notification.
     public func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [AnyHashable : Any] = [:]) -> Bool {
         if let launchNotification = launchOptions[UIApplication.LaunchOptionsKey.remoteNotification] as? [String: Any] {
             self.launchNotification = FlutterApnsSerialization.remoteMessageUserInfo(toDict: launchNotification)
         }
         return true
     }
-    
+    /// Tells the delegate that the app is now in the background.
     public func applicationDidEnterBackground(_ application: UIApplication) {
         resumingFromBackground = true
     }
-    
+    /// Tells the delegate that the app has become active.
     public func applicationDidBecomeActive(_ application: UIApplication) {
         resumingFromBackground = false
         application.applicationIconBadgeNumber = 1
         application.applicationIconBadgeNumber = 0
     }
-    
+    /// Tells the delegate that the app successfully registered with Apple Push Notification service (APNs).
+    /// -- application: The app object that initiated the remote-notification registration process.
+    /// -- deviceToken: A globally unique token that identifies this device to APNs. Send this token to the server 
+    /// that you use to generate remote notifications. Your server must pass this token unmodified back to APNs when 
+    /// sending those remote notifications.
+    /// APNs device tokens are of variable length. Do not hard-code their size.
     public func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         channel.invokeMethod("onToken", arguments: deviceToken.hexString)
     }
     
-    
+    /// Tells the app that a remote notification arrived that indicates there is data to be fetched.
+    /// the system calls this method when your app is running in the foreground or background. 
+    /// In addition, if you enabled the remote notifications background mode, the system launches your app 
+    /// (or wakes it from the suspended state) and puts it in the background state when a remote notification arrive
+    /// -- application: Your singleton app object.
+    /// -- userInfo: A dictionary that contains information related to the remote notification, potentially
+    /// including a badge number for the app icon, an alert sound, an alert message to display to the user,
+    /// a notification identifier, and custom data. The provider originates it as a JSON-defined dictionary 
+    /// that iOS converts to an NSDictionary object; the dictionary may contain only property-list objects 
+    /// plus NSNull. For more information about the contents of the remote notification dictionary, see 
+    /// Generating a Remote Notification.
+    /// -- handler:  The block to execute when the download operation is complete. When calling this block, 
+    /// pass in the fetch result value that best describes the results of your download operation. You must 
+    /// call this handler and should do so as soon as possible. For a list of possible values, see the 
+    /// UIBackgroundFetchResult type.
     public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) -> Bool {
         let userInfo = FlutterApnsSerialization.remoteMessageUserInfo(toDict: userInfo)
         
         if resumingFromBackground {
-            onResume(userInfo: userInfo)
+            channel.invokeMethod("onBackgroundMessage", arguments: userInfo)
         } else {
             channel.invokeMethod("onMessage", arguments: userInfo)
         }
@@ -198,7 +226,15 @@ func getFlutterError(_ error: Error) -> FlutterError {
         completionHandler(.noData)
         return true
     }
-    
+    /// Asks the delegate how to handle a notification that arrived while the app was running in the foreground.
+    /// -- center: The shared user notification center object that received the notification.
+    /// -- notification: The notification that is about to be delivered. Use the information in this object to 
+    /// determine an appropriate course of action. For example, you might use the information to update your app’s interface.
+    /// -- completionHandler: The block to execute with the presentation option for the notification. Always execute this block
+    /// at some point during your implementation of this method. Use the options parameter to specify how you want the system to 
+    /// alert the user, if at all. This block has no return value and takes the following parameter:
+    /// -- options: The option for notifying the user. Specify UNNotificationPresentationOptionNone to silence the notification 
+    /// completely. Specify other values to interact with the user. For a list of possible options, see UNNotificationPresentationOptions.
     public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
         
@@ -219,7 +255,14 @@ func getFlutterError(_ error: Error) -> FlutterError {
             }
         }
     }
-    
+    /// Asks the delegate to process the user's response to a delivered notification.
+    /// -- center: The shared user notification center object that received the notification.
+    /// -- response: The user’s response to the notification. This object contains the original 
+    /// notification and the identifier string for the selected action. If the action allowed the 
+    /// user to provide a textual response, this parameter contains a UNTextInputNotificationResponse object.
+    /// -- completionHandler: The block to execute when you have finished processing the user’s response. You
+    /// must execute this block at some point after processing the user's response to let the system know that 
+    /// you are done. The block has no return value or parameters.
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         var userInfo = response.notification.request.content.userInfo
         guard userInfo["aps"] != nil else {

@@ -56,7 +56,7 @@ packages:
       name: firebase_core
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.3.0"
+    version: "1.6.0"
   firebase_core_platform_interface:
     dependency: transitive
     description:
@@ -77,21 +77,21 @@ packages:
       name: firebase_messaging
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "10.0.2"
+    version: "10.0.7"
   firebase_messaging_platform_interface:
     dependency: transitive
     description:
       name: firebase_messaging_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.5"
   firebase_messaging_web:
     dependency: transitive
     description:
       name: firebase_messaging_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.2"
+    version: "2.0.5"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -100,9 +100,11 @@ packages:
   flutter_apns_only:
     dependency: "direct main"
     description:
-      name: flutter_apns_only
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: flutter_apns_only
+      ref: "horam/add_on_background_message"
+      resolved-ref: "52e14f431f5b3b38851981436e9cbf4a8bc56836"
+      url: "git@github.com:horam-fs/flutter-apns.git"
+    source: git
     version: "1.5.0-dev.1"
   flutter_test:
     dependency: "direct dev"
@@ -148,7 +150,7 @@ packages:
       name: plugin_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.0"
+    version: "2.0.1"
   sky_engine:
     dependency: transitive
     description: flutter
